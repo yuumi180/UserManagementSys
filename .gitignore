@@ -1,0 +1,52 @@
+# 忽略所有 node_modules
+**/node_modules/
+
+# 忽略所有 .class 文件
+**/*.class
+
+# 忽略所有 .log 文件
+**/*.log
+
+# 忽略 IDEA 配置文件
+**/.idea/
+**/*.iml
+**/*.iws
+
+# 忽略 Eclipse 配置文件
+**/.project
+**/.classpath
+**/.settings/
+
+# 忽略 VS Code 配置文件
+**/.vscode/
+
+# 忽略 Maven 输出目录
+**/target/
+**/pom.xml.tag
+**/pom.xml.releaseBackup
+**/pom.xml.versionsBackup
+**/pom.xml.next
+**/release.properties
+**/dependency-reduced-pom.xml
+**/buildNumber.properties
+**/.mvn/timing.properties
+
+# 忽略 Vue 编译输出
+**/dist/
+
+# 忽略操作系统文件
+.DS_Store
+Thumbs.db
+
+# 忽略本地配置文件（包含敏感信息）
+**/application-local.properties
+**/.env.local
+**/.env.*.local
+
+# 忽略数据库文件
+**/*.db
+**/*.sqlite
+
+# 忽略上传的文件
+**/uploads/
+**/upload/
