@@ -18,6 +18,14 @@
             <el-icon><User /></el-icon>
             <span>用户管理</span>
           </el-menu-item>
+          <el-menu-item index="/roles">
+            <el-icon><UserFilled /></el-icon>
+            <span>角色管理</span>
+          </el-menu-item>
+          <el-menu-item index="/logs">
+            <el-icon><Document /></el-icon>
+            <span>操作日志</span>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -172,7 +180,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, DataAnalysis } from '@element-plus/icons-vue'
+import { User, DataAnalysis, Document, UserFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
 const tableData = ref([])

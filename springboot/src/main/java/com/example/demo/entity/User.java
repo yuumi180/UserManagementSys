@@ -1,8 +1,11 @@
 package com.example.demo.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.util.List;
 
 @TableName("user")
 public class User {
@@ -20,6 +23,9 @@ public class User {
     private String sex;
     
     private String address;
+    
+    @TableField(exist = false)
+    private List<Role> roles;
 
     public Integer getId() {
         return id;
@@ -75,5 +81,13 @@ public class User {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public List<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<Role> roles) {
+        this.roles = roles;
     }
 }

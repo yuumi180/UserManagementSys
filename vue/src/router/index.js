@@ -15,6 +15,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/logs',
+    name: 'logs',
+    component: () => import('../views/LogView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/roles',
+    name: 'roles',
+    component: () => import('../views/RoleView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/LoginView.vue')

@@ -3,7 +3,7 @@
     <!-- 统计卡片 -->
     <el-row :gutter="20" style="margin-bottom: 20px;">
       <el-col :span="6">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="stat-card">
           <div style="display: flex; align-items: center;">
             <el-icon style="font-size: 40px; color: #409EFF; margin-right: 15px;">
               <user />
@@ -18,7 +18,7 @@
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="stat-card">
           <div style="display: flex; align-items: center;">
             <el-icon style="font-size: 40px; color: #67C23A; margin-right: 15px;">
               <user-filled />
@@ -33,7 +33,7 @@
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="stat-card">
           <div style="display: flex; align-items: center;">
             <el-icon style="font-size: 40px; color: #F56C6C; margin-right: 15px;">
               <user-filled />
@@ -48,7 +48,7 @@
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="stat-card">
           <div style="display: flex; align-items: center;">
             <el-icon style="font-size: 40px; color: #E6A23C; margin-right: 15px;">
               <trend-charts />
@@ -116,7 +116,12 @@ const pieChart = ref(null)
 const barChart = ref(null)
 
 const loadDashboard = () => {
-  request.get('/api/user').then(res => {
+  request.get('/api/user', {
+    params: {
+      pageNum: 1,
+      pageSize: 100
+    }
+  }).then(res => {
     if (res.code === '0') {
       const users = res.data.records
       totalUsers.value = res.data.total
@@ -233,3 +238,14 @@ onMounted(() => {
   })
 })
 </script>
+
+<style scoped>
+.stat-card {
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+</style>
