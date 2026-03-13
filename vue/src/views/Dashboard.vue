@@ -1,186 +1,192 @@
 <template>
   <div style="padding: 20px; height: 100%; overflow-y: auto;">
-    <!-- 返回按钮 -->
-    <div style="margin-bottom: 20px;">
+    <!-- 返回按钮和导出按钮 -->
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
       <el-button @click="$router.push('/')" style="margin-bottom: 10px;">
         <el-icon style="vertical-align: middle; margin-right: 5px;">
           <Back />
         </el-icon>
         返回用户管理
       </el-button>
+      <el-button type="primary" @click="exportDashboard" icon="Download">
+        导出仪表盘
+      </el-button>
     </div>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" style="margin-bottom: 20px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div style="display: flex; align-items: center;">
-            <el-icon style="font-size: 40px; color: #409EFF; margin-right: 15px;">
-              <user />
-            </el-icon>
-            <div>
-              <div style="color: #999; font-size: 14px;">用户总数</div>
-              <div style="font-size: 24px; font-weight: bold; color: #333;">
-                {{ totalUsers }}
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div style="display: flex; align-items: center;">
-            <el-icon style="font-size: 40px; color: #67C23A; margin-right: 15px;">
-              <user-filled />
-            </el-icon>
-            <div>
-              <div style="color: #999; font-size: 14px;">男用户</div>
-              <div style="font-size: 24px; font-weight: bold; color: #333;">
-                {{ maleUsers }}
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div style="display: flex; align-items: center;">
-            <el-icon style="font-size: 40px; color: #F56C6C; margin-right: 15px;">
-              <user-filled />
-            </el-icon>
-            <div>
-              <div style="color: #999; font-size: 14px;">女用户</div>
-              <div style="font-size: 24px; font-weight: bold; color: #333;">
-                {{ femaleUsers }}
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div style="display: flex; align-items: center;">
-            <el-icon style="font-size: 40px; color: #E6A23C; margin-right: 15px;">
-              <trend-charts />
-            </el-icon>
-            <div>
-              <div style="color: #999; font-size: 14px;">平均年龄</div>
-              <div style="font-size: 24px; font-weight: bold; color: #333;">
-                {{ avgAge }} 岁
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 图表 -->
-    <el-row :gutter="20">
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div style="font-weight: bold;">男女比例</div>
-          </template>
-          <div ref="pieChart" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div style="font-weight: bold;">年龄分布</div>
-          </template>
-          <div ref="barChart" style="height: 300px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 地址分布 -->
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div style="font-weight: bold;">用户地址分布（环形图）</div>
-          </template>
-          <div ref="mapChart" style="height: 400px;"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
-        <el-card>
-          <template #header>
-            <div style="font-weight: bold;">城市用户数 TOP10</div>
-          </template>
-          <div ref="cityBarChart" style="height: 400px;"></div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 最近新增用户 -->
-
-    <!-- 用户数量最多的地址 Top3 -->
-    <el-card style="margin-top: 20px;">
-      <template #header>
-        <div style="font-weight: bold; font-size: 16px;">🏆 用户数量最多的地址 Top3</div>
-      </template>
-      <el-row :gutter="20">
-        <!-- 第二名 -->
-        <el-col :span="8">
-          <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #e0e0e0 0%, #9e9e9e 100%);">
-            <div style="text-align: center; color: #fff;">
-              <div style="font-size: 50px; margin-bottom: 10px;">🥈</div>
-              <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">第二名</div>
-              <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">
-                {{ top3Cities[1]?.name || '-' }}
-              </div>
-              <div style="font-size: 36px; font-weight: bold;">
-                {{ top3Cities[1]?.value || 0 }}
-                <span style="font-size: 16px;">人</span>
+    <!-- 所有内容 -->
+    <div id="dashboard-content">
+      <!-- 统计卡片 -->
+      <el-row :gutter="20" style="margin-bottom: 20px;">
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div style="display: flex; align-items: center;">
+              <el-icon style="font-size: 40px; color: #409EFF; margin-right: 15px;">
+                <user />
+              </el-icon>
+              <div>
+                <div style="color: #999; font-size: 14px;">用户总数</div>
+                <div style="font-size: 24px; font-weight: bold; color: #333;">
+                  {{ totalUsers }}
+                </div>
               </div>
             </div>
           </el-card>
         </el-col>
-
-        <!-- 第一名 -->
-        <el-col :span="8">
-          <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); transform: scale(1.05);">
-            <div style="text-align: center; color: #fff;">
-              <div style="font-size: 60px; margin-bottom: 10px;">🏆</div>
-              <div style="font-size: 16px; opacity: 0.9; margin-bottom: 5px;">第一名</div>
-              <div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">
-                {{ top3Cities[0]?.name || '-' }}
-              </div>
-              <div style="font-size: 42px; font-weight: bold;">
-                {{ top3Cities[0]?.value || 0 }}
-                <span style="font-size: 18px;">人</span>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div style="display: flex; align-items: center;">
+              <el-icon style="font-size: 40px; color: #67C23A; margin-right: 15px;">
+                <user-filled />
+              </el-icon>
+              <div>
+                <div style="color: #999; font-size: 14px;">男用户</div>
+                <div style="font-size: 24px; font-weight: bold; color: #333;">
+                  {{ maleUsers }}
+                </div>
               </div>
             </div>
           </el-card>
         </el-col>
-
-        <!-- 第三名 -->
-        <el-col :span="8">
-          <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #cd7f32 0%, #8b4513 100%);">
-            <div style="text-align: center; color: #fff;">
-              <div style="font-size: 50px; margin-bottom: 10px;">🥉</div>
-              <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">第三名</div>
-              <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">
-                {{ top3Cities[2]?.name || '-' }}
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div style="display: flex; align-items: center;">
+              <el-icon style="font-size: 40px; color: #F56C6C; margin-right: 15px;">
+                <user-filled />
+              </el-icon>
+              <div>
+                <div style="color: #999; font-size: 14px;">女用户</div>
+                <div style="font-size: 24px; font-weight: bold; color: #333;">
+                  {{ femaleUsers }}
+                </div>
               </div>
-              <div style="font-size: 36px; font-weight: bold;">
-                {{ top3Cities[2]?.value || 0 }}
-                <span style="font-size: 16px;">人</span>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" class="stat-card">
+            <div style="display: flex; align-items: center;">
+              <el-icon style="font-size: 40px; color: #E6A23C; margin-right: 15px;">
+                <trend-charts />
+              </el-icon>
+              <div>
+                <div style="color: #999; font-size: 14px;">平均年龄</div>
+                <div style="font-size: 24px; font-weight: bold; color: #333;">
+                  {{ avgAge }} 岁
+                </div>
               </div>
             </div>
           </el-card>
         </el-col>
       </el-row>
-    </el-card>
+
+      <!-- 图表 -->
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-card>
+            <template #header>
+              <div style="font-weight: bold;">男女比例</div>
+            </template>
+            <div ref="pieChart" style="height: 300px;"></div>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <template #header>
+              <div style="font-weight: bold;">年龄分布</div>
+            </template>
+            <div ref="barChart" style="height: 300px;"></div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 地址分布 -->
+      <el-row :gutter="20" style="margin-top: 20px;">
+        <el-col :span="12">
+          <el-card>
+            <template #header>
+              <div style="font-weight: bold;">用户地址分布（环形图）</div>
+            </template>
+            <div ref="mapChart" style="height: 400px;"></div>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <template #header>
+              <div style="font-weight: bold;">城市用户数 TOP10</div>
+            </template>
+            <div ref="cityBarChart" style="height: 400px;"></div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 用户数量最多的地址 Top3 -->
+      <el-card style="margin-top: 20px;">
+        <template #header>
+          <div style="font-weight: bold; font-size: 16px;">🏆 用户数量最多的地址 Top3</div>
+        </template>
+        <el-row :gutter="20">
+          <!-- 第二名 -->
+          <el-col :span="8">
+            <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #e0e0e0 0%, #9e9e9e 100%);">
+              <div style="text-align: center; color: #fff;">
+                <div style="font-size: 50px; margin-bottom: 10px;">🥈</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">第二名</div>
+                <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">
+                  {{ top3Cities[1]?.name || '-' }}
+                </div>
+                <div style="font-size: 36px; font-weight: bold;">
+                  {{ top3Cities[1]?.value || 0 }}
+                  <span style="font-size: 16px;">人</span>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 第一名 -->
+          <el-col :span="8">
+            <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); transform: scale(1.05);">
+              <div style="text-align: center; color: #fff;">
+                <div style="font-size: 60px; margin-bottom: 10px;">🏆</div>
+                <div style="font-size: 16px; opacity: 0.9; margin-bottom: 5px;">第一名</div>
+                <div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">
+                  {{ top3Cities[0]?.name || '-' }}
+                </div>
+                <div style="font-size: 42px; font-weight: bold;">
+                  {{ top3Cities[0]?.value || 0 }}
+                  <span style="font-size: 18px;">人</span>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 第三名 -->
+          <el-col :span="8">
+            <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #cd7f32 0%, #8b4513 100%);">
+              <div style="text-align: center; color: #fff;">
+                <div style="font-size: 50px; margin-bottom: 10px;">🥉</div>
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">第三名</div>
+                <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">
+                  {{ top3Cities[2]?.name || '-' }}
+                </div>
+                <div style="font-size: 36px; font-weight: bold;">
+                  {{ top3Cities[2]?.value || 0 }}
+                  <span style="font-size: 16px;">人</span>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </el-card>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { User, UserFilled, TrendCharts, Back } from '@element-plus/icons-vue'
+import { User, UserFilled, TrendCharts, Back, Download } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
+import html2canvas from 'html2canvas'
 import request from '@/utils/request'
 
 const totalUsers = ref(0)
@@ -457,6 +463,41 @@ const initCityBarChart = (users) => {
         }
       }
     ]
+  })
+}
+
+// 导出 Dashboard 为图片
+const exportDashboard = () => {
+  const element = document.getElementById('dashboard-content')
+
+  // 显示加载提示
+  const loading = ElMessage({
+    message: '正在生成图片...',
+    type: 'info',
+    duration: 0
+  })
+
+  html2canvas(element, {
+    useCORS: true, // 允许跨域图片
+    scale: 2, // 提高清晰度
+    backgroundColor: '#ffffff', // 白色背景
+    logging: false,
+    width: element.scrollWidth,
+    height: element.scrollHeight
+  }).then(canvas => {
+    loading.close()
+
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.download = `仪表盘-${new Date().toLocaleDateString()}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+
+    ElMessage.success('导出成功！')
+  }).catch(err => {
+    loading.close()
+    console.error('导出失败:', err)
+    ElMessage.error('导出失败，请重试')
   })
 }
 
