@@ -1,5 +1,15 @@
 <template>
-  <div style="padding: 20px;">
+  <div style="padding: 20px; height: 100%; overflow-y: auto;">
+    <!-- 返回按钮 -->
+    <div style="margin-bottom: 20px;">
+      <el-button @click="$router.push('/')" style="margin-bottom: 10px;">
+        <el-icon style="vertical-align: middle; margin-right: 5px;">
+          <Back />
+        </el-icon>
+        返回用户管理
+      </el-button>
+    </div>
+
     <!-- 统计卡片 -->
     <el-row :gutter="20" style="margin-bottom: 20px;">
       <el-col :span="6">
@@ -84,26 +94,92 @@
       </el-col>
     </el-row>
 
+    <!-- 地址分布 -->
+    <el-row :gutter="20" style="margin-top: 20px;">
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <div style="font-weight: bold;">用户地址分布（环形图）</div>
+          </template>
+          <div ref="mapChart" style="height: 400px;"></div>
+        </el-card>
+      </el-col>
+      <el-col :span="12">
+        <el-card>
+          <template #header>
+            <div style="font-weight: bold;">城市用户数 TOP10</div>
+          </template>
+          <div ref="cityBarChart" style="height: 400px;"></div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <!-- 最近新增用户 -->
+
+    <!-- 用户数量最多的地址 Top3 -->
     <el-card style="margin-top: 20px;">
       <template #header>
-        <div style="font-weight: bold;">最近新增用户 (Top 5)</div>
+        <div style="font-weight: bold; font-size: 16px;">🏆 用户数量最多的地址 Top3</div>
       </template>
-      <el-table :data="recentUsers" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="nickname" label="昵称" width="120" />
-        <el-table-column prop="age" label="年龄" width="80" />
-        <el-table-column prop="sex" label="性别" width="80" />
-        <el-table-column prop="address" label="地址" />
-      </el-table>
+      <el-row :gutter="20">
+        <!-- 第二名 -->
+        <el-col :span="8">
+          <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #e0e0e0 0%, #9e9e9e 100%);">
+            <div style="text-align: center; color: #fff;">
+              <div style="font-size: 50px; margin-bottom: 10px;">🥈</div>
+              <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">第二名</div>
+              <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">
+                {{ top3Cities[1]?.name || '-' }}
+              </div>
+              <div style="font-size: 36px; font-weight: bold;">
+                {{ top3Cities[1]?.value || 0 }}
+                <span style="font-size: 16px;">人</span>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+
+        <!-- 第一名 -->
+        <el-col :span="8">
+          <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); transform: scale(1.05);">
+            <div style="text-align: center; color: #fff;">
+              <div style="font-size: 60px; margin-bottom: 10px;">🏆</div>
+              <div style="font-size: 16px; opacity: 0.9; margin-bottom: 5px;">第一名</div>
+              <div style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">
+                {{ top3Cities[0]?.name || '-' }}
+              </div>
+              <div style="font-size: 42px; font-weight: bold;">
+                {{ top3Cities[0]?.value || 0 }}
+                <span style="font-size: 18px;">人</span>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+
+        <!-- 第三名 -->
+        <el-col :span="8">
+          <el-card shadow="hover" class="top-card" style="background: linear-gradient(135deg, #cd7f32 0%, #8b4513 100%);">
+            <div style="text-align: center; color: #fff;">
+              <div style="font-size: 50px; margin-bottom: 10px;">🥉</div>
+              <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">第三名</div>
+              <div style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">
+                {{ top3Cities[2]?.name || '-' }}
+              </div>
+              <div style="font-size: 36px; font-weight: bold;">
+                {{ top3Cities[2]?.value || 0 }}
+                <span style="font-size: 16px;">人</span>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
     </el-card>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { User, UserFilled, TrendCharts } from '@element-plus/icons-vue'
+import { User, UserFilled, TrendCharts, Back } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import request from '@/utils/request'
 
@@ -112,8 +188,11 @@ const maleUsers = ref(0)
 const femaleUsers = ref(0)
 const avgAge = ref(0)
 const recentUsers = ref([])
+const top3Cities = ref([])
 const pieChart = ref(null)
 const barChart = ref(null)
+const mapChart = ref(null)
+const cityBarChart = ref(null)
 
 const loadDashboard = () => {
   request.get('/api/user', {
@@ -137,12 +216,35 @@ const loadDashboard = () => {
       // 最近新增（取前 5 个）
       recentUsers.value = users.slice(0, 5)
 
+      // 统计各城市用户数量
+      const cityCount = {}
+      users.forEach(u => {
+        const address = u.address || ''
+        const match = address.match(/([\u4e00-\u9fa5]+市)/)
+        if (match) {
+          const city = match[1]
+          cityCount[city] = (cityCount[city] || 0) + 1
+        }
+      })
+
+      // 转换为数组并排序，取前 3 个
+      const sortedCities = Object.entries(cityCount)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 3)
+
+      top3Cities.value = sortedCities
+
       // 初始化图表
       nextTick(() => {
         initPieChart()
         initBarChart()
+        initMapChart(users)
+        initCityBarChart(users)
       })
     }
+  }).catch(err => {
+    console.error('加载数据失败:', err)
   })
 }
 
@@ -224,6 +326,140 @@ const initBarChart = () => {
   })
 }
 
+const initMapChart = (users) => {
+  console.log('地图图表 - 用户数据:', users);
+
+  const chart = echarts.init(mapChart.value)
+
+  // 统计各城市用户数量
+  const cityCount = {}
+  users.forEach(u => {
+    const address = u.address || ''
+    // 修复正则：匹配中文字符 + 市
+    const match = address.match(/([\u4e00-\u9fa5]+市)/)
+    console.log('地址:', address, '匹配结果:', match);
+    if (match) {
+      const city = match[1]
+      cityCount[city] = (cityCount[city] || 0) + 1
+    }
+  })
+
+  console.log('城市统计:', cityCount);
+
+  // 转换为 ECharts 需要的格式
+  const data = Object.keys(cityCount).map(city => ({
+    name: city,
+    value: cityCount[city]
+  }))
+
+  console.log('图表数据:', data);
+
+  // 按数量排序
+  data.sort((a, b) => b.value - a.value)
+
+  chart.setOption({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}<br/>用户数：{c}'
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left',
+      data: data.map(item => item.name)
+    },
+    series: [
+      {
+        name: '用户地址分布',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['60%', '50%'],
+        data: data,
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        label: {
+          formatter: '{b}: {c}'
+        }
+      }
+    ]
+  })
+}
+
+const initCityBarChart = (users) => {
+  console.log('柱状图表 - 用户数据:', users);
+
+  const chart = echarts.init(cityBarChart.value)
+
+  // 统计各城市用户数量
+  const cityCount = {}
+  users.forEach(u => {
+    const address = u.address || ''
+    const match = address.match(/([\u4e00-\u9fa5]+市)/)
+    console.log('地址:', address, '匹配结果:', match);
+    if (match) {
+      const city = match[1]
+      cityCount[city] = (cityCount[city] || 0) + 1
+    }
+  })
+
+  console.log('城市统计:', cityCount);
+
+  // 转换为数组并排序
+  const sortedCities = Object.entries(cityCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10) // 取前 10 个城市
+
+  console.log('排序后城市:', sortedCities);
+
+  const cities = sortedCities.map(item => item[0])
+  const counts = sortedCities.map(item => item[1])
+
+  console.log('图表数据 - 城市:', cities, '数量:', counts);
+
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      }
+    },
+    xAxis: {
+      type: 'category',
+      data: cities,
+      axisLabel: {
+        interval: 0,
+        rotate: 30
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: '用户数'
+    },
+    series: [
+      {
+        data: counts,
+        type: 'bar',
+        barWidth: '50%',
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#83bff6' },
+            { offset: 0.5, color: '#188df0' },
+            { offset: 1, color: '#188df0' }
+          ])
+        },
+        label: {
+          show: true,
+          position: 'top'
+        }
+      }
+    ]
+  })
+}
+
 onMounted(() => {
   loadDashboard()
 
@@ -234,6 +470,12 @@ onMounted(() => {
     }
     if (barChart.value) {
       echarts.getInstanceByDom(barChart.value).resize()
+    }
+    if (mapChart.value) {
+      echarts.getInstanceByDom(mapChart.value).resize()
+    }
+    if (cityBarChart.value) {
+      echarts.getInstanceByDom(cityBarChart.value).resize()
     }
   })
 })
@@ -247,5 +489,16 @@ onMounted(() => {
 .stat-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.top-card {
+  transition: all 0.3s ease;
+  border: none;
+  border-radius: 12px;
+}
+
+.top-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 </style>

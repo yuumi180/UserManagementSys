@@ -14,6 +14,17 @@ body {
   overflow: hidden;
 }
 
+/* 修复滚动问题 - 关键 */
+.el-container {
+  height: 100%;
+  overflow: hidden;
+}
+
+.el-main {
+  overflow-y: auto;
+  flex: 1;
+}
+
 /* 优化卡片样式 */
 .el-card {
   border-radius: 8px;

@@ -1,5 +1,15 @@
 <template>
   <div style="padding: 20px;">
+    <!-- 返回按钮 -->
+    <div style="margin-bottom: 20px;">
+      <el-button @click="$router.push('/')" style="margin-bottom: 10px;">
+        <el-icon style="vertical-align: middle; margin-right: 5px;">
+          <Back />
+        </el-icon>
+        返回用户管理
+      </el-button>
+    </div>
+
     <el-card>
       <template #header>
         <div style="font-weight: bold;">操作日志</div>
@@ -31,6 +41,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Back } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
 const tableData = ref([])

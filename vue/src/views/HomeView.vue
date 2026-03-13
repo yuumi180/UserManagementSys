@@ -6,17 +6,17 @@
           后台管理系统
         </div>
         <el-menu
-          default-active="1"
-          style="height: calc(100vh - 50px)"
-          background-color="rgb(238, 241, 246)"
-          router>
-          <el-menu-item index="/dashboard">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>仪表盘</span>
-          </el-menu-item>
+            default-active="2"
+            style="height: calc(100vh - 50px)"
+            background-color="rgb(238, 241, 246)"
+            router>
           <el-menu-item index="/">
             <el-icon><User /></el-icon>
             <span>用户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/dashboard">
+            <el-icon><DataAnalysis /></el-icon>
+            <span>仪表盘</span>
           </el-menu-item>
           <el-menu-item index="/roles">
             <el-icon><UserFilled /></el-icon>
@@ -48,11 +48,11 @@
           <el-card>
             <div style="margin-bottom: 20px;">
               <el-input
-                v-model="search"
-                placeholder="请输入用户名或昵称搜索"
-                style="width: 300px; margin-right: 10px;"
-                clearable
-                @clear="load"
+                  v-model="search"
+                  placeholder="请输入用户名或昵称搜索"
+                  style="width: 300px; margin-right: 10px;"
+                  clearable
+                  @clear="load"
               />
               <el-button type="primary" @click="load">搜索</el-button>
               <el-button type="success" @click="add">新增用户</el-button>
@@ -80,13 +80,13 @@
 
             <div style="margin-top: 20px; text-align: right;">
               <el-pagination
-                v-model:current-page="currentPage"
-                v-model:page-size="pageSize"
-                :page-sizes="[10, 20, 50, 100]"
-                layout="total, sizes, prev, pager, next, jumper"
-                :total="total"
-                @size-change="handleSizeChange"
-                @current-change="handleCurrentChange"
+                  v-model:current-page="currentPage"
+                  v-model:page-size="pageSize"
+                  :page-sizes="[10, 20, 50, 100]"
+                  layout="total, sizes, prev, pager, next, jumper"
+                  :total="total"
+                  @size-change="handleSizeChange"
+                  @current-change="handleCurrentChange"
               />
             </div>
           </el-card>
@@ -95,10 +95,10 @@
     </el-container>
 
     <el-dialog
-      v-model="dialogVisible"
-      :title="form.id ? '编辑用户' : '新增用户'"
-      width="500px"
-      @close="resetForm"
+        v-model="dialogVisible"
+        :title="form.id ? '编辑用户' : '新增用户'"
+        width="500px"
+        @close="resetForm"
     >
       <el-form :model="form" label-width="80px" :rules="rules" ref="formRef">
         <el-form-item label="用户名" prop="username">
@@ -128,9 +128,9 @@
 
     <!-- 查看用户详情 -->
     <el-dialog
-      v-model="viewDialogVisible"
-      title="用户详情"
-      width="500px"
+        v-model="viewDialogVisible"
+        title="用户详情"
+        width="500px"
     >
       <el-descriptions :column="1" border>
         <el-descriptions-item label="ID">{{ viewUser.id }}</el-descriptions-item>
@@ -146,18 +146,18 @@
     </el-dialog>
 
     <el-dialog
-      v-model="importDialogVisible"
-      title="导入 Excel"
-      width="500px"
+        v-model="importDialogVisible"
+        title="导入 Excel"
+        width="500px"
     >
       <el-upload
-        ref="uploadRef"
-        drag
-        action="#"
-        :auto-upload="false"
-        :limit="1"
-        accept=".xlsx, .xls"
-        :on-change="handleFileChange"
+          ref="uploadRef"
+          drag
+          action="#"
+          :auto-upload="false"
+          :limit="1"
+          accept=".xlsx, .xls"
+          :on-change="handleFileChange"
       >
         <el-icon class="el-icon--upload"><upload-filled /></el-icon>
         <div class="el-upload__text">
