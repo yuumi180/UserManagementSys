@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.demo.annotation.Log;
 import com.example.demo.common.Result;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.UserDTO;
@@ -29,6 +30,7 @@ public class UserController {
     @Resource
     UserMapper userMapper;
 
+    @Log("用户登录")
     @PostMapping("/login")
     public Result<?> login(@Valid @RequestBody LoginDTO loginDTO) {
         User user = userMapper.selectOne(Wrappers.<User>lambdaQuery()
@@ -51,6 +53,7 @@ public class UserController {
         return Result.success(userDTO);
     }
 
+    @Log("新增用户")
     @PostMapping
     public Result<?> save(@RequestBody User user){
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
@@ -60,6 +63,7 @@ public class UserController {
         return Result.success();
     }
 
+    @Log("修改用户")
     @PutMapping
     public Result<?> update(@RequestBody User user){
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
@@ -83,6 +87,7 @@ public class UserController {
         return Result.success(userPage);
     }
 
+    @Log("删除用户")
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id){
         userMapper.deleteById(id);
@@ -94,6 +99,7 @@ public class UserController {
         return Result.success();
     }
 
+    @Log("批量删除")
     @DeleteMapping("/batch")
     public Result<?> batchDelete(@RequestBody java.util.List<Long> ids) {
         for (Long id : ids) {
@@ -102,12 +108,14 @@ public class UserController {
         return Result.success();
     }
 
+    @Log("导出 Excel")
     @GetMapping("/export")
     public void export(HttpServletResponse response) throws IOException {
         List<User> userList = userMapper.selectList(null);
         ExcelUtils.exportUsers(userList, response);
     }
 
+    @Log("导入 Excel")
     @PostMapping("/import")
     public Result<?> importUsers(@RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {

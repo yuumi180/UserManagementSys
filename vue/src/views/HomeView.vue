@@ -61,8 +61,9 @@
               <el-table-column prop="age" label="年龄" width="80" />
               <el-table-column prop="sex" label="性别" width="80" />
               <el-table-column prop="address" label="地址" show-overflow-tooltip />
-              <el-table-column label="操作" width="180" fixed="right">
+              <el-table-column label="操作" width="240" fixed="right">
                 <template #default="scope">
+                  <el-button type="info" size="small" @click="handleView(scope.row)">查看</el-button>
                   <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
                   <el-button type="danger" size="small" @click="handleDelete(scope.row.id)">删除</el-button>
                 </template>
@@ -117,6 +118,25 @@
       </template>
     </el-dialog>
 
+    <!-- 查看用户详情 -->
+    <el-dialog
+      v-model="viewDialogVisible"
+      title="用户详情"
+      width="500px"
+    >
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="ID">{{ viewUser.id }}</el-descriptions-item>
+        <el-descriptions-item label="用户名">{{ viewUser.username }}</el-descriptions-item>
+        <el-descriptions-item label="昵称">{{ viewUser.nickname }}</el-descriptions-item>
+        <el-descriptions-item label="年龄">{{ viewUser.age }}</el-descriptions-item>
+        <el-descriptions-item label="性别">{{ viewUser.sex }}</el-descriptions-item>
+        <el-descriptions-item label="地址">{{ viewUser.address }}</el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="viewDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog
       v-model="importDialogVisible"
       title="导入 Excel"
@@ -161,12 +181,14 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const dialogVisible = ref(false)
+const viewDialogVisible = ref(false)
 const importDialogVisible = ref(false)
 const formRef = ref(null)
 const uploadRef = ref(null)
 const currentUser = ref(null)
 const importing = ref(false)
 const selectedFile = ref(null)
+const viewUser = ref({})
 
 const form = ref({
   username: '',
@@ -231,6 +253,11 @@ const save = () => {
 const handleEdit = (row) => {
   form.value = JSON.parse(JSON.stringify(row))
   dialogVisible.value = true
+}
+
+const handleView = (row) => {
+  viewUser.value = JSON.parse(JSON.stringify(row))
+  viewDialogVisible.value = true
 }
 
 const handleDelete = (id) => {
