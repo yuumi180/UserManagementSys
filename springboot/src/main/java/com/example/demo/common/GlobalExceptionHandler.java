@@ -1,5 +1,6 @@
 package com.example.demo.common;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -7,12 +8,19 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import javax.validation.ConstraintViolationException;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public Result<?> handleException(Exception e) {
-        e.printStackTrace();
+        log.error("系统异常", e);
         return Result.error("500", "服务器错误：" + e.getMessage());
+    }
+    
+    @ExceptionHandler(RuntimeException.class)
+    public Result<?> handleRuntimeException(RuntimeException e) {
+        log.warn("运行时异常：{}", e.getMessage());
+        return Result.error("500", e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

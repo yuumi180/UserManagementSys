@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.demo.annotation.Log;
+import com.example.demo.annotation.RateLimit;
 import com.example.demo.common.Result;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.UserDTO;
@@ -11,6 +12,7 @@ import com.example.demo.mapper.UserMapper;
 import com.example.demo.utils.ExcelUtils;
 import com.example.demo.utils.PasswordEncoder;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/user")
@@ -29,8 +32,12 @@ public class UserController {
 
     @Resource
     UserMapper userMapper;
+    
+    @Resource
+    RedisTemplate<String, Object> redisTemplate;
 
     @Log("用户登录")
+    @RateLimit(maxRequests = 5, timeWindow = 60)  // 1 分钟最多 5 次
     @PostMapping("/login")
     public Result<?> login(@Valid @RequestBody LoginDTO loginDTO) {
         User user = userMapper.selectOne(Wrappers.<User>lambdaQuery()
@@ -91,6 +98,8 @@ public class UserController {
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id){
         userMapper.deleteById(id);
+        // 清除缓存
+        redisTemplate.delete("user:" + id);
         return Result.success();
     }
 
@@ -141,5 +150,29 @@ public class UserController {
         }
 
         return Result.success("成功导入 " + successCount + " 条数据");
+    }
+
+    /**
+     * 根据 ID 查询用户详情（带 Redis 缓存）
+     */
+    @GetMapping("/{id}")
+    public Result<?> getUserById(@PathVariable Long id) {
+        // 1. 先查 Redis
+        String key = "user:" + id;
+        Object cached = redisTemplate.opsForValue().get(key);
+        if (cached != null) {
+            return Result.success(cached);
+        }
+        
+        // 2. Redis 没有，查数据库
+        User user = userMapper.selectById(id);
+        if (user == null) {
+            return Result.error("400", "用户不存在");
+        }
+        
+        // 3. 写入 Redis（设置 30 分钟过期）
+        redisTemplate.opsForValue().set(key, user, 30, TimeUnit.MINUTES);
+        
+        return Result.success(user);
     }
 }
