@@ -5,7 +5,7 @@
 }
 
 body {
-  font-family: 'Microsoft YaHei', Arial, sans-serif;
+  font-family: 'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
@@ -14,7 +14,6 @@ body {
   overflow: hidden;
 }
 
-/* 修复滚动问题 - 关键 */
 .el-container {
   height: 100%;
   overflow: hidden;
@@ -23,33 +22,49 @@ body {
 .el-main {
   overflow-y: auto;
   flex: 1;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
-/* 优化卡片样式 */
 .el-card {
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.el-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
 }
 
 .el-card__header {
-  background-color: #f5f7fa;
-  border-bottom: 1px solid #e4e7ed;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  font-size: 16px;
 }
 
-/* 优化按钮样式 */
 .el-button {
-  border-radius: 4px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-/* 优化表格样式 */
+.el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
 .el-table {
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .el-table th {
-  background-color: #f5f7fa;
-  color: #606266;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -57,68 +72,78 @@ body {
   background: #fafafa;
 }
 
-/* 优化对话框样式 */
+.el-table__row:hover {
+  background-color: #f5f7fa !important;
+}
+
 .el-dialog {
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
 }
 
 .el-dialog__header {
-  background-color: #f5f7fa;
-  border-bottom: 1px solid #e4e7ed;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
 }
 
-/* 优化输入框样式 */
+.el-dialog__title {
+  color: #fff;
+  font-weight: 600;
+}
+
 .el-input__inner {
-  border-radius: 4px;
+  border-radius: 6px;
+  border: 1px solid #dcdfe6;
+  transition: all 0.3s ease;
 }
 
-/* 添加加载动画 */
-.el-loading-spinner .path {
-  stroke: #409EFF;
+.el-input__inner:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
-/* 优化滚动条 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
-/* 优化菜单样式 */
 .el-menu-item {
-  border-radius: 4px;
-  margin: 4px 8px;
-  width: calc(100% - 16px);
+  border-radius: 8px;
+  margin: 6px 12px;
+  width: calc(100% - 24px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .el-menu-item:hover {
-  background-color: rgba(64, 158, 255, 0.1);
+  background-color: rgba(64, 158, 255, 0.15);
 }
 
 .el-menu-item.is-active {
-  background-color: #409EFF;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-/* 添加淡入动画 */
-@keyframes fadeIn {
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -127,42 +152,67 @@ body {
 }
 
 .el-card {
-  animation: fadeIn 0.3s ease;
+  animation: fadeInUp 0.4s ease-out;
 }
 
-/* 优化头像 */
 .el-avatar {
-  border: 2px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
 }
 
-/* 优化下拉菜单 */
+.el-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
 .el-dropdown-menu__item:hover {
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
 }
 
-/* 优化分页器 */
 .el-pagination .el-pager li {
-  border-radius: 4px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
 .el-pagination .el-pager li.active {
-  background-color: #409EFF;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
 }
 
-/* 优化描述列表 */
 .el-descriptions__label {
   font-weight: 600;
-  color: #606266;
+  color: #667eea;
+  background: linear-gradient(to right, rgba(102, 126, 234, 0.1), transparent);
 }
 
-/* 优化上传组件 */
 .el-upload-dragger {
-  border-radius: 8px;
-  border: 2px dashed #dcdfe6;
+  border-radius: 12px;
+  border: 2px dashed #667eea;
+  transition: all 0.3s ease;
 }
 
 .el-upload-dragger:hover {
-  border-color: #409EFF;
+  border-color: #764ba2;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.el-radio__input.is-checked + .el-radio__label {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.el-radio__input.is-checked .el-radio__inner {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.el-loading-spinner .path {
+  stroke: #667eea;
+}
+
+.el-message {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }

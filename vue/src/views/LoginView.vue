@@ -1,9 +1,11 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <el-card class="login-card">
+      <div class="glass-card">
         <div class="login-header">
-          <el-icon :size="50" color="#409EFF"><UserFilled /></el-icon>
+          <div class="logo-wrapper">
+            <el-icon :size="60" color="#fff"><UserFilled /></el-icon>
+          </div>
           <h2 class="login-title">用户管理系统</h2>
           <p class="login-subtitle">Welcome Back!</p>
         </div>
@@ -14,6 +16,7 @@
                 placeholder="请输入用户名"
                 prefix-icon="User"
                 size="large"
+                class="custom-input"
             />
           </el-form-item>
           <el-form-item label="密码" prop="password">
@@ -24,23 +27,25 @@
                 prefix-icon="Lock"
                 show-password
                 size="large"
+                class="custom-input"
                 @keyup.enter="handleLogin"
             />
           </el-form-item>
           <el-form-item>
-            <el-checkbox v-model="rememberMe" style="margin-right: 10px;">记住我</el-checkbox>
+            <el-checkbox v-model="rememberMe" style="margin-right: 10px;" class="remember-me">记住我</el-checkbox>
             <el-button
                 type="primary"
-                style="width: 100%"
+                class="login-btn"
                 :loading="loading"
                 @click="handleLogin"
                 size="large"
             >
-              登录
+              <el-icon style="margin-right: 8px;"><Loading /></el-icon>
+              {{ loading ? '登录中...' : '登录' }}
             </el-button>
           </el-form-item>
         </el-form>
-      </el-card>
+      </div>
     </div>
   </div>
 </template>
@@ -49,7 +54,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { UserFilled } from '@element-plus/icons-vue'
+import { UserFilled, Loading } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
 const router = useRouter()
@@ -125,13 +130,13 @@ const handleLogin = () => {
 .login-box {
   position: relative;
   z-index: 1;
-  animation: fadeInUp 0.5s ease;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(40px);
   }
   to {
     opacity: 1;
@@ -139,26 +144,88 @@ const handleLogin = () => {
   }
 }
 
-.login-card {
-  width: 450px;
-  padding: 10px;
+.glass-card {
+  width: 480px;
+  padding: 50px 40px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
   padding: 20px 0;
 }
 
+.logo-wrapper {
+  display: inline-block;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  margin-bottom: 20px;
+}
+
 .login-title {
-  margin: 15px 0 5px;
+  margin: 15px 0 10px;
   color: #333;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .login-subtitle {
   color: #999;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.custom-input :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.custom-input :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.custom-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.remember-me :deep(.el-checkbox__label) {
+  color: #666;
+  font-weight: 500;
+}
+
+.login-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 600;
+  color: #555;
 }
 </style>
