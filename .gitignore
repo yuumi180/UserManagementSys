@@ -34,6 +34,10 @@
 # 忽略 Vue 编译输出
 **/dist/
 
+# 忽略本地运行日志和临时脚本
+logs/
+**/logs/
+
 # 忽略操作系统文件
 .DS_Store
 Thumbs.db

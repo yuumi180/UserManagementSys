@@ -14,7 +14,7 @@
       <template #header>
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-weight: bold;">角色管理</span>
-          <el-button type="primary" @click="add">新增角色</el-button>
+          <el-button v-if="hasPermission('btn:role:manage')" type="primary" @click="add">新增角色</el-button>
         </div>
       </template>
 
@@ -24,10 +24,11 @@
         <el-table-column prop="code" label="角色编码" width="150" />
         <el-table-column prop="description" label="描述" show-overflow-tooltip />
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="scope">
-            <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(scope.row.id)">删除</el-button>
+            <el-button v-if="hasPermission('btn:role:manage')" type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button v-if="hasPermission('btn:role:manage')" type="success" size="small" @click="openPermissionDialog(scope.row)">权限</el-button>
+            <el-button v-if="hasPermission('btn:role:manage')" type="danger" size="small" @click="handleDelete(scope.row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -67,6 +68,41 @@
         <el-button type="primary" @click="save">确定</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+        v-model="permissionDialogVisible"
+        :title="`配置权限 - ${currentRole?.name || ''}`"
+        width="560px"
+        class="permission-dialog"
+    >
+      <div class="permission-toolbar">
+        <el-button size="small" @click="checkAllPermissions">全选</el-button>
+        <el-button size="small" @click="clearPermissions">清空</el-button>
+      </div>
+      <el-tree
+          ref="permissionTreeRef"
+          :data="permissionTree"
+          show-checkbox
+          node-key="id"
+          default-expand-all
+          :props="{ label: 'label', children: 'children' }"
+          class="permission-tree"
+      >
+        <template #default="{ data }">
+          <span class="permission-node">
+            <el-tag size="small" :type="data.type === 'MENU' ? 'success' : 'warning'">
+              {{ data.type === 'MENU' ? '菜单' : '按钮' }}
+            </el-tag>
+            <span>{{ data.label }}</span>
+            <span class="permission-code">{{ data.code }}</span>
+          </span>
+        </template>
+      </el-tree>
+      <template #footer>
+        <el-button @click="permissionDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveRolePermissions" :loading="permissionSaving">保存权限</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -81,7 +117,12 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
 const dialogVisible = ref(false)
+const permissionDialogVisible = ref(false)
 const formRef = ref(null)
+const permissionTreeRef = ref(null)
+const permissionTree = ref([])
+const currentRole = ref(null)
+const permissionSaving = ref(false)
 
 const form = ref({
   name: '',
@@ -92,6 +133,12 @@ const form = ref({
 const rules = {
   name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }]
+}
+
+const hasPermission = (code) => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+  const permissions = userInfo.permissions
+  return !Array.isArray(permissions) || permissions.length === 0 || permissions.includes(code)
 }
 
 const load = () => {
@@ -160,6 +207,57 @@ const handleDelete = (id) => {
   })
 }
 
+const loadPermissionTree = () => {
+  request.get('/api/role/permissions').then(res => {
+    if (res.code === '0') {
+      permissionTree.value = res.data
+    }
+  })
+}
+
+const openPermissionDialog = (row) => {
+  currentRole.value = row
+  permissionDialogVisible.value = true
+  if (permissionTree.value.length === 0) {
+    loadPermissionTree()
+  }
+  request.get(`/api/role/${row.id}/permissions`).then(res => {
+    if (res.code === '0') {
+      setTimeout(() => {
+        permissionTreeRef.value?.setCheckedKeys(res.data || [])
+      }, 0)
+    }
+  })
+}
+
+const getAllPermissionIds = () => {
+  return permissionTree.value.map(item => item.id)
+}
+
+const checkAllPermissions = () => {
+  permissionTreeRef.value?.setCheckedKeys(getAllPermissionIds())
+}
+
+const clearPermissions = () => {
+  permissionTreeRef.value?.setCheckedKeys([])
+}
+
+const saveRolePermissions = () => {
+  if (!currentRole.value) return
+  permissionSaving.value = true
+  const checkedKeys = permissionTreeRef.value?.getCheckedKeys() || []
+  request.post(`/api/role/${currentRole.value.id}/permissions`, checkedKeys).then(res => {
+    if (res.code === '0') {
+      ElMessage.success('权限保存成功')
+      permissionDialogVisible.value = false
+    } else {
+      ElMessage.error(res.msg || '权限保存失败')
+    }
+  }).finally(() => {
+    permissionSaving.value = false
+  })
+}
+
 const handleCurrentChange = (pageNum) => {
   currentPage.value = pageNum
   load()
@@ -179,5 +277,35 @@ const resetForm = () => {
 
 onMounted(() => {
   load()
+  loadPermissionTree()
 })
 </script>
+
+<style scoped>
+.permission-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.permission-tree {
+  max-height: 430px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid #e3dacb;
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.permission-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.permission-code {
+  color: #9a9387;
+  font-size: 12px;
+}
+</style>

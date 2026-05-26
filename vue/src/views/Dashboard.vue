@@ -8,9 +8,14 @@
         </el-icon>
         返回用户管理
       </el-button>
-      <el-button type="primary" @click="exportDashboard" icon="Download">
-        导出仪表盘
-      </el-button>
+      <div style="display: flex; gap: 10px;">
+        <el-button v-if="hasPermission('btn:ai:dashboard')" type="success" @click="loadAiAnalysis" :loading="aiLoading">
+          AI 解读
+        </el-button>
+        <el-button type="primary" @click="exportDashboard" icon="Download">
+          导出仪表盘
+        </el-button>
+      </div>
     </div>
 
     <!-- 所有内容 -->
@@ -178,6 +183,58 @@
         </el-row>
       </el-card>
     </div>
+
+    <el-drawer
+      v-model="aiDrawerVisible"
+      title="AI 数据分析"
+      size="420px"
+      class="ai-drawer"
+    >
+      <div v-if="aiAnalysis" class="ai-panel">
+        <div class="ai-summary">{{ aiAnalysis.summary }}</div>
+
+        <div class="ai-metrics">
+          <div class="ai-metric">
+            <span>用户总数</span>
+            <strong>{{ aiAnalysis.totalUsers }}</strong>
+          </div>
+          <div class="ai-metric">
+            <span>平均年龄</span>
+            <strong>{{ aiAnalysis.avgAge }} 岁</strong>
+          </div>
+          <div class="ai-metric">
+            <span>男/女</span>
+            <strong>{{ aiAnalysis.maleUsers }}/{{ aiAnalysis.femaleUsers }}</strong>
+          </div>
+        </div>
+
+        <div class="ai-section">
+          <div class="ai-section-title">城市集中度</div>
+          <div v-if="aiAnalysis.topCities?.length" class="city-list">
+            <div v-for="city in aiAnalysis.topCities" :key="city.name" class="city-item">
+              <span>{{ city.name }}</span>
+              <strong>{{ city.value }} 人</strong>
+            </div>
+          </div>
+          <el-empty v-else description="暂无城市数据" :image-size="80" />
+        </div>
+
+        <div class="ai-section">
+          <div class="ai-section-title">异常提示</div>
+          <ul class="ai-list">
+            <li v-for="item in aiAnalysis.anomalies" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+
+        <div class="ai-section">
+          <div class="ai-section-title">运营建议</div>
+          <ul class="ai-list">
+            <li v-for="item in aiAnalysis.suggestions" :key="item">{{ item }}</li>
+          </ul>
+        </div>
+      </div>
+      <el-empty v-else description="点击 AI 解读生成分析" />
+    </el-drawer>
   </div>
 </template>
 
@@ -199,6 +256,15 @@ const pieChart = ref(null)
 const barChart = ref(null)
 const mapChart = ref(null)
 const cityBarChart = ref(null)
+const aiDrawerVisible = ref(false)
+const aiLoading = ref(false)
+const aiAnalysis = ref(null)
+
+const hasPermission = (code) => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+  const permissions = userInfo.permissions
+  return !Array.isArray(permissions) || permissions.length === 0 || permissions.includes(code)
+}
 
 const loadDashboard = () => {
   request.get('/api/user', {
@@ -501,6 +567,20 @@ const exportDashboard = () => {
   })
 }
 
+const loadAiAnalysis = () => {
+  aiDrawerVisible.value = true
+  aiLoading.value = true
+  request.get('/api/ai/dashboard-analysis').then(res => {
+    if (res.code === '0') {
+      aiAnalysis.value = res.data
+    } else {
+      ElMessage.error(res.msg || 'AI 解读失败')
+    }
+  }).finally(() => {
+    aiLoading.value = false
+  })
+}
+
 onMounted(() => {
   loadDashboard()
 
@@ -541,5 +621,78 @@ onMounted(() => {
 .top-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.ai-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ai-summary {
+  padding: 16px;
+  border: 1px solid #ded6c8;
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #252923;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+.ai-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.ai-metric {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f6efe4;
+}
+
+.ai-metric span {
+  display: block;
+  color: #777267;
+  font-size: 12px;
+}
+
+.ai-metric strong {
+  display: block;
+  margin-top: 6px;
+  color: #1f4d3a;
+  font-size: 18px;
+}
+
+.ai-section-title {
+  margin-bottom: 10px;
+  color: #252923;
+  font-weight: 700;
+}
+
+.city-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3dacb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.city-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee5d8;
+  background: #fffdf7;
+}
+
+.city-item:last-child {
+  border-bottom: 0;
+}
+
+.ai-list {
+  padding-left: 18px;
+  color: #4d554a;
+  line-height: 1.8;
 }
 </style>

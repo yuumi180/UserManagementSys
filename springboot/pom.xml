@@ -18,7 +18,7 @@
         <java.version>17</java.version>
         <mybatis-plus.version>3.5.3.1</mybatis-plus.version>
         <jjwt.version>0.9.1</jjwt.version>
-        <lombok.version>1.18.26</lombok.version>
+        <lombok.version>1.18.36</lombok.version>
     </properties>
 
     <dependencies>
@@ -61,6 +61,19 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
             <version>${jjwt.version}</version>
+        </dependency>
+
+        <!-- jjwt 0.9.1 在 JDK 17 下运行需要 JAXB -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>2.3.8</version>
         </dependency>
 
         <!-- BCrypt 密码加密 -->

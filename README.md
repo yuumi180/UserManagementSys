@@ -1,257 +1,272 @@
-# SpringBoot + Vue3 用户管理系统
+# 智能用户运营管理平台
 
-## 📖 项目简介
+基于 Spring Boot 2.7 + Vue 3 的企业级后台管理系统。项目从基础用户管理 Demo 升级为带 RBAC 权限、JWT 认证、操作审计、数据可视化、Excel 导入导出和 AI 分析能力的智能管理平台，适合作为 Java 后端 / 全栈方向简历项目。
 
-基于 **SpringBoot 2.7.18** + **Vue 3** + **Element Plus** 的前后端分离用户管理系统。该系统功能完善，界面美观，包含用户管理、角色管理、数据可视化、Excel 导入导出等核心功能，适合企业级后台管理系统开发参考。
+## 项目亮点
 
----
+- 完整 RBAC 权限闭环：用户、角色、菜单权限、按钮权限、角色授权配置。
+- JWT 登录认证：后端签发 token，前端通过 `Authorization: Bearer <token>` 访问接口。
+- 动态菜单与按钮级权限：登录后按角色返回菜单和权限码，前端动态渲染导航和操作按钮。
+- AI 数据分析：仪表盘支持用户画像、城市集中度、异常数据和运营建议分析。
+- AI 日志风控：操作日志支持风险等级、风险分、高频接口、异常操作和处置建议分析。
+- 操作审计：通过 AOP 自动记录关键操作日志。
+- Excel 能力：支持用户数据导入、导出，并保留后续扩展导入质检空间。
+- 本地开发友好：Redis 不可用时登录限流自动降级，不阻断核心功能。
+- 前端体验优化：统一后台工作台视觉风格，支持个人中心、系统设置、消息中心。
 
-## ✨ 主要功能
+## 技术栈
 
-### 1. 用户管理
-- ✅ 用户列表展示（分页）
-- ✅ 用户新增、编辑、删除
-- ✅ 批量删除
-- ✅ 用户搜索（用户名/昵称）
-- ✅ 用户详情查看
-- ✅ Excel 导入/导出
+后端：
 
-### 2. 数据可视化仪表盘
-- ✅ 用户统计（总数、男女比例、平均年龄）
-- ✅ 性别分布饼图
-- ✅ 年龄分布柱状图
-- ✅ 用户地址分布环形图
-- ✅ 城市用户数 TOP10 柱状图
-- ✅ 用户数量 Top3 奖牌展示
-- ✅ **仪表盘导出为图片**
+- Spring Boot 2.7.18
+- Java 17
+- MyBatis-Plus 3.5.3.1
+- MySQL 8
+- Redis
+- JWT 0.9.1
+- BCrypt
+- Apache POI
+- Spring AOP
 
-### 3. 角色管理
-- ✅ 角色列表展示（分页）
-- ✅ 角色新增、编辑、删除
-- ✅ 角色描述管理
+前端：
 
-### 4. 操作日志
-- ✅ 用户操作记录
-- ✅ 请求方法记录
-- ✅ 操作时间记录
+- Vue 3.2
+- Vue Router 4
+- Vuex 4
+- Element Plus
+- Axios
+- ECharts
+- html2canvas
 
-### 5. 安全功能
-- ✅ JWT Token 认证
-- ✅ BCrypt 密码加密
-- ✅ 路由守卫
-- ✅ 登录验证
+## 功能模块
 
----
+### 认证与权限
 
-## 🛠️ 技术栈
-
-### 后端技术
-| 技术           | 版本      | 说明       |
-|--------------|---------|----------|
-| Spring Boot  | 2.7.18  | 核心框架     |
-| MyBatis-Plus | 3.5.3.1 | ORM 框架   |
-| MySQL        | 8.0.33  | 数据库      |
-| JWT          | 0.9.1   | Token 认证 |
-| Lombok       | 1.18.26 | 简化代码     |
-| Apache POI   | 5.2.3   | Excel 处理 |
-| Spring AOP   | -       | 日志切面     |
-
-### 前端技术
-| 技术           | 版本     | 说明      |
-|--------------|--------|---------|
-| Vue          | 3.2.13 | 核心框架    |
-| Vue Router   | 4.0.3  | 路由管理    |
-| Vuex         | 4.0.0  | 状态管理    |
-| Element Plus | 2.9.7  | UI 组件库  |
-| ECharts      | 6.0.0  | 数据可视化   |
-| Axios        | 1.8.4  | HTTP 请求 |
-| html2canvas  | latest | 截图导出    |
-
----
-
----
-
-## 🚀 快速开始
-
-### 环境要求
-- JDK 17+
-- MySQL 8.0+
-- Node.js 16+
-- Maven 3.6+
-
-### 1. 数据库配置
-sql -- 创建数据库 CREATE DATABASE IF NOT EXISTS user_management DEFAULT CHARSET utf8mb4;
--- 使用数据库 USE user_management;
--- 创建用户表 
-CREATE TABLE user ( 
-id bigint NOT NULL AUTO_INCREMENT, 
-username varchar(50) NOT NULL, 
-password varchar(255) NOT NULL, 
-nickname varchar(50) DEFAULT NULL, 
-age int DEFAULT NULL, 
-sex varchar(10) DEFAULT NULL, 
-address varchar(255) DEFAULT NULL, 
-create_time datetime DEFAULT CURRENT_TIMESTAMP, 
-PRIMARY KEY (id) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- 插入测试数据 
-INSERT INTO user (username, password, nickname, age, sex, address) 
-VALUES ('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '管理员', 25, '男', '北京市朝阳区');
-
-### 2. 后端启动
-bash
-进入后端目录
-cd springboot
-修改数据库配置（application.properties）
-spring.datasource.url=jdbc:mysql://localhost:3306/user_management?useUnicode=true&characterEncoding=utf-8&useSSL=false
-spring.datasource.username=root
-spring.datasource.password=你的密码
-Maven 构建
-mvn clean package
-启动项目
-mvn spring-boot:run
-或者直接运行 DemoApplication.java
-后端访问地址：http://localhost:9090
-
-### 3. 前端启动
-bash
-进入前端目录
-cd vue
-安装依赖
-npm install
-启动开发服务器
-npm run serve
-构建生产版本
-npm run build
-前端访问地址：http://localhost:8080
-
----
-
-## 📸 功能截图
-
-### 仪表盘
-- 用户数据统计
-- 可视化图表
-- Top3 奖牌展示
-- 支持导出为图片
+- 登录、退出登录
+- JWT token 认证
+- 用户-角色-权限模型
+- 菜单权限控制
+- 按钮权限控制
+- 角色权限配置弹窗
+- 默认角色：
+  - `ADMIN`：系统管理员，拥有全部权限
+  - `OPERATOR`：运营人员，可维护用户和查看仪表盘
+  - `AUDITOR`：审计员，可查看仪表盘和操作日志
 
 ### 用户管理
-- 列表展示
-- 增删改查
-- Excel 导入导出
+
+- 用户分页查询
+- 用户搜索
+- 新增、编辑、删除
 - 批量删除
+- 用户详情查看
+- Excel 导入
+- Excel 导出
 
 ### 角色管理
-- 角色配置
-- 权限管理
+
+- 角色分页查询
+- 新增、编辑、删除角色
+- 用户角色分配接口
+- 角色菜单/按钮权限配置
+
+### 数据仪表盘
+
+- 用户总数
+- 性别比例
+- 平均年龄
+- 年龄分布
+- 城市分布
+- 城市 Top 排名
+- 仪表盘图片导出
+- AI 数据解读
 
 ### 操作日志
-- 操作记录
-- 时间追踪
 
----
+- 操作日志分页查询
+- 请求方法、URL、参数、结果记录
+- AI 风险分析
+- 高频接口识别
+- 风险等级和处置建议
 
-## 🔧 核心功能说明
+### 前端体验
 
-### 1. JWT 认证流程
-1. 用户登录，后端验证密码
-2. 生成 JWT Token 返回给前端
-3. 前端存储 Token 到 localStorage
-4. 后续请求携带 Token
-5. 后端拦截器验证 Token 有效性
+- 工作台风格 UI
+- 消息中心
+- 个人中心资料编辑
+- 系统设置
+  - 紧凑模式
+  - 表格斑马纹
+  - 消息提醒开关
 
-### 2. Excel 导入导出
-- **导出**：使用 Apache POI 生成 Excel 文件
-- **导入**：解析 Excel 文件，批量插入数据
+## 环境要求
 
-### 3. 仪表盘导出图片
-- 使用 html2canvas 库
-- 将 DOM 节点转换为 Canvas
-- 导出为 PNG 图片下载
+- JDK 17+
+- MySQL 8+
+- Redis 5+（可选；未启动时限流自动降级）
+- Node.js 16+
 
-### 4. 密码加密
-- 使用 BCrypt 强哈希算法
-- 支持盐值加密
-- 不可逆加密，安全可靠
+项目自带 Maven Wrapper，不要求本机全局安装 Maven。
 
----
+## 数据库初始化
 
-## 🎯 项目亮点
+后端默认连接：
 
-1. **完整的前后端分离架构**
-2. **RESTful API 设计规范**
-3. **统一返回结果封装**
-4. **全局异常处理**
-5. **JWT Token 认证**
-6. **数据可视化展示**
-7. **Excel 导入导出功能**
-8. **操作日志记录（AOP）**
-9. **响应式 UI 设计**
-10. **代码规范，注释清晰**
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/user_management?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=123456
+spring.redis.host=localhost
+spring.redis.port=6379
+```
 
----
+初始化表结构和默认权限数据：
 
-## 📝 API 接口文档
+```powershell
+mysql --default-character-set=utf8mb4 -uroot -p123456 -e "source E:/WorkSpace/Project/Java/springboot-vue-demo/springboot/src/main/resources/db/schema.sql"
+```
 
-### 用户接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/user | GET | 分页查询用户 |
-| /api/user/{id} | GET | 查询用户详情 |
-| /api/user | POST | 新增用户 |
-| /api/user | PUT | 修改用户 |
-| /api/user/{id} | DELETE | 删除用户 |
-| /api/user/batch | DELETE | 批量删除 |
-| /api/user/export | GET | 导出 Excel |
-| /api/user/import | POST | 导入 Excel |
+导入演示用户数据：
 
-### 角色接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/role | GET | 分页查询角色 |
-| /api/role | POST | 新增角色 |
-| /api/role | PUT | 修改角色 |
-| /api/role/{id} | DELETE | 删除角色 |
+```powershell
+mysql --default-character-set=utf8mb4 -uroot -p123456 -e "source E:/WorkSpace/Project/Java/springboot-vue-demo/springboot/src/main/resources/db/seed-users.sql"
+```
 
-### 日志接口
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| /api/log | GET | 分页查询日志 |
+数据库脚本：
 
----
+- [schema.sql](springboot/src/main/resources/db/schema.sql)
+- [seed-users.sql](springboot/src/main/resources/db/seed-users.sql)
 
-## 🔐 默认账号
+主要表：
+
+- `users`
+- `role`
+- `user_role`
+- `permission`
+- `role_permission`
+- `operation_log`
+
+默认账号：
 
 - 用户名：`admin`
 - 密码：`123456`
 
----
+## 后端启动
 
-## 💡 常见问题
+```powershell
+cd springboot
+.\mvnw.cmd spring-boot:run
+```
 
-### 1. 前端启动失败
-bash
-清除缓存
-npm cache clean --force
-删除 node_modules
-rm -rf node_modules package-lock.json
-重新安装
+后端地址：
+
+```text
+http://localhost:9090
+```
+
+后端打包：
+
+```powershell
+cd springboot
+.\mvnw.cmd -DskipTests package
+```
+
+## 前端启动
+
+```powershell
+cd vue
 npm install
-### 2. 后端数据库连接失败
-- 检查 MySQL 服务是否启动
-- 检查数据库名、用户名、密码是否正确
-- 检查端口是否为 3306
+npm run serve
+```
 
-### 3. 跨域问题
-- 后端已配置 CORS
-- 前端使用 Axios 代理
+前端地址：
 
----
+```text
+http://localhost:8080
+```
 
-## 📚 学习资源
+前端构建：
 
-- [Vue 3 官方文档](https://cn.vuejs.org/)
-- [Spring Boot 官方文档](https://spring.io/projects/spring-boot)
-- [Element Plus 文档](https://element-plus.org/zh-CN/)
-- [MyBatis-Plus 文档](https://baomidou.com/)
-- [ECharts 文档](https://echarts.apache.org/zh/index.html)
+```powershell
+cd vue
+npm run build
+```
 
+## API 概览
+
+### 用户接口
+
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/user/login` | POST | 登录，返回 token、角色、权限和菜单 |
+| `/api/user/logout` | POST | 退出登录 |
+| `/api/user` | GET | 分页查询用户 |
+| `/api/user/{id}` | GET | 查询用户详情 |
+| `/api/user` | POST | 新增用户 |
+| `/api/user` | PUT | 修改用户 |
+| `/api/user/{id}` | DELETE | 删除用户 |
+| `/api/user/batch` | DELETE | 批量删除 |
+| `/api/user/export` | GET | 导出 Excel |
+| `/api/user/import` | POST | 导入 Excel |
+
+### 角色与权限接口
+
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/role` | GET | 分页查询角色 |
+| `/api/role/all` | GET | 查询全部角色 |
+| `/api/role` | POST | 新增角色 |
+| `/api/role` | PUT | 修改角色 |
+| `/api/role/{id}` | DELETE | 删除角色 |
+| `/api/role/user/{userId}` | GET | 查询用户角色 |
+| `/api/role/assign` | POST | 分配用户角色 |
+| `/api/role/permissions` | GET | 查询权限树 |
+| `/api/role/{id}/permissions` | GET | 查询角色已有权限 |
+| `/api/role/{id}/permissions` | POST | 保存角色权限 |
+
+### AI 分析接口
+
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/ai/dashboard-analysis` | GET | 仪表盘 AI 数据分析 |
+| `/api/ai/log-risk-analysis` | GET | 操作日志 AI 风险分析 |
+
+### 日志接口
+
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/log` | GET | 分页查询操作日志 |
+
+## 简历描述参考
+
+项目名称：智能用户运营管理平台
+
+项目描述：
+
+> 基于 Spring Boot、Vue 3、MyBatis-Plus、MySQL、Redis 和 JWT 构建的企业级后台管理系统，支持用户管理、RBAC 权限控制、操作审计、数据可视化、Excel 导入导出和 AI 数据分析。
+
+核心职责：
+
+- 设计并实现 RBAC 权限模型，支持用户、角色、菜单权限和按钮权限配置。
+- 实现 JWT 登录认证和前端动态菜单渲染，完成路由级和按钮级权限控制。
+- 基于 AOP 实现操作日志审计，记录关键接口操作、请求 URL、参数和执行结果。
+- 实现用户数据可视化仪表盘，并提供城市分布、年龄分布和性别比例统计。
+- 设计 AI 分析模块，支持用户画像解读和操作日志风险研判，输出风险等级、异常点和优化建议。
+- 实现 Excel 用户导入导出，支持批量数据维护。
+
+## 常见问题
+
+如果 PowerShell 直接读取中文文件出现乱码，文件本身仍是 UTF-8，可用：
+
+```powershell
+Get-Content -Encoding UTF8 README.md
+```
+
+如果后端启动失败，优先检查：
+
+- MySQL 是否启动
+- `user_management` 数据库是否初始化
+- `application.properties` 中数据库账号密码是否正确
+- 9090 端口是否被占用
+
+如果登录接口提示 Redis 连接失败，当前项目已经支持限流降级；重新构建后端并启动即可。

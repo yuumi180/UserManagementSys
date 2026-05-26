@@ -7,9 +7,18 @@ import com.example.demo.annotation.RateLimit;
 import com.example.demo.common.Result;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.UserDTO;
+import com.example.demo.entity.Permission;
+import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
+import com.example.demo.entity.UserRole;
+import com.example.demo.entity.RolePermission;
+import com.example.demo.mapper.PermissionMapper;
+import com.example.demo.mapper.RoleMapper;
+import com.example.demo.mapper.RolePermissionMapper;
 import com.example.demo.mapper.UserMapper;
+import com.example.demo.mapper.UserRoleMapper;
 import com.example.demo.utils.ExcelUtils;
+import com.example.demo.utils.JwtUtils;
 import com.example.demo.utils.PasswordEncoder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -20,11 +29,12 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/user")
@@ -32,9 +42,24 @@ public class UserController {
 
     @Resource
     UserMapper userMapper;
+
+    @Resource
+    RoleMapper roleMapper;
+
+    @Resource
+    UserRoleMapper userRoleMapper;
+
+    @Resource
+    PermissionMapper permissionMapper;
+
+    @Resource
+    RolePermissionMapper rolePermissionMapper;
     
     @Resource
     RedisTemplate<String, Object> redisTemplate;
+
+    @Resource
+    JwtUtils jwtUtils;
 
     @Log("用户登录")
     @RateLimit(maxRequests = 5, timeWindow = 60)  // 1 分钟最多 5 次
@@ -51,11 +76,12 @@ public class UserController {
             return Result.error("400", "密码错误");
         }
         
-        String token = UUID.randomUUID().toString().replace("-", "");
+        String token = jwtUtils.generateToken(user.getId(), user.getUsername());
         
         UserDTO userDTO = new UserDTO();
         BeanUtils.copyProperties(user, userDTO);
         userDTO.setToken(token);
+        fillUserPermissionInfo(user.getId(), userDTO);
         
         return Result.success(userDTO);
     }
@@ -174,5 +200,52 @@ public class UserController {
         redisTemplate.opsForValue().set(key, user, 30, TimeUnit.MINUTES);
         
         return Result.success(user);
+    }
+
+    private void fillUserPermissionInfo(Integer userId, UserDTO userDTO) {
+        List<UserRole> userRoles = userRoleMapper.selectList(
+                Wrappers.<UserRole>lambdaQuery().eq(UserRole::getUserId, userId)
+        );
+        List<Integer> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toList());
+        if (roleIds.isEmpty()) {
+            userDTO.setRoles(new ArrayList<>());
+            userDTO.setPermissions(new ArrayList<>());
+            userDTO.setMenus(new ArrayList<>());
+            return;
+        }
+
+        List<Role> roles = roleMapper.selectBatchIds(roleIds);
+        userDTO.setRoles(roles.stream().map(Role::getCode).collect(Collectors.toList()));
+
+        List<RolePermission> rolePermissions = rolePermissionMapper.selectList(
+                Wrappers.<RolePermission>lambdaQuery().in(RolePermission::getRoleId, roleIds)
+        );
+        List<Integer> permissionIds = rolePermissions.stream()
+                .map(RolePermission::getPermissionId)
+                .distinct()
+                .collect(Collectors.toList());
+        if (permissionIds.isEmpty()) {
+            userDTO.setPermissions(new ArrayList<>());
+            userDTO.setMenus(new ArrayList<>());
+            return;
+        }
+
+        List<Permission> permissions = permissionMapper.selectBatchIds(permissionIds);
+        userDTO.setPermissions(permissions.stream().map(Permission::getCode).collect(Collectors.toList()));
+
+        List<UserDTO.MenuDTO> menus = permissions.stream()
+                .filter(permission -> "MENU".equals(permission.getType()))
+                .sorted(Comparator.comparing(permission -> permission.getSort() == null ? 0 : permission.getSort()))
+                .map(permission -> {
+                    UserDTO.MenuDTO menu = new UserDTO.MenuDTO();
+                    menu.setName(permission.getName());
+                    menu.setCode(permission.getCode());
+                    menu.setPath(permission.getPath());
+                    menu.setIcon(permission.getIcon());
+                    menu.setSort(permission.getSort());
+                    return menu;
+                })
+                .collect(Collectors.toList());
+        userDTO.setMenus(menus);
     }
 }

@@ -1,5 +1,5 @@
 <template>
-  <div style="height: 100%">
+  <div style="height: 100%" :class="{ 'compact-mode': appSettings.compactMode }">
     <el-container style="height: 100%;">
       <el-aside width="220px" class="modern-aside">
         <div class="logo-section">
@@ -7,27 +7,15 @@
           <span class="logo-text">后台管理系统</span>
         </div>
         <el-menu
-            default-active="2"
+            :default-active="route.path"
             style="height: calc(100vh - 70px)"
             background-color="transparent"
             router
             class="modern-menu"
         >
-          <el-menu-item index="/">
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="/dashboard">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>仪表盘</span>
-          </el-menu-item>
-          <el-menu-item index="/roles">
-            <el-icon><UserFilled /></el-icon>
-            <span>角色管理</span>
-          </el-menu-item>
-          <el-menu-item index="/logs">
-            <el-icon><Document /></el-icon>
-            <span>操作日志</span>
+          <el-menu-item v-for="menu in visibleMenus" :key="menu.path" :index="menu.path">
+            <el-icon><component :is="menuIconMap[menu.icon] || User" /></el-icon>
+            <span>{{ menu.name }}</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -35,13 +23,55 @@
       <el-container>
         <el-header class="modern-header">
           <div class="header-left">
-            <el-icon :size="24" class="breadcrumb-icon"><Location /></el-icon>
-            <span class="breadcrumb-text">{{ currentRouteName }}</span>
+            <el-icon :size="22" class="breadcrumb-icon"><Location /></el-icon>
+            <div>
+              <span class="breadcrumb-text">{{ currentRouteName }}</span>
+              <span class="breadcrumb-subtitle">人员、角色与操作记录</span>
+            </div>
           </div>
           <div class="header-right">
-            <el-badge :value="5" class="notification-badge" :hidden="false">
-              <el-icon :size="22" class="notification-icon"><Bell /></el-icon>
-            </el-badge>
+            <el-popover
+              placement="bottom-end"
+              width="340"
+              trigger="click"
+              popper-class="notification-popover"
+            >
+              <template #reference>
+                <button class="notification-button" type="button">
+                  <el-badge :value="unreadCount" :hidden="!appSettings.notifications || unreadCount === 0" class="notification-badge">
+                    <el-icon :size="20" class="notification-icon"><Bell /></el-icon>
+                  </el-badge>
+                </button>
+              </template>
+              <div class="notification-panel">
+                <div class="notification-head">
+                  <div>
+                    <div class="notification-title">消息中心</div>
+                    <div class="notification-meta">{{ unreadCount }} 条未读提醒</div>
+                  </div>
+                  <el-button link type="primary" :disabled="unreadCount === 0" @click="markAllRead">
+                    全部已读
+                  </el-button>
+                </div>
+                <div class="notification-list">
+                  <button
+                    v-for="item in notifications"
+                    :key="item.id"
+                    type="button"
+                    class="notification-item"
+                    :class="{ unread: !item.read }"
+                    @click="markNotificationRead(item)"
+                  >
+                    <span class="notification-dot"></span>
+                    <span class="notification-content">
+                      <span class="notification-item-title">{{ item.title }}</span>
+                      <span class="notification-item-desc">{{ item.desc }}</span>
+                    </span>
+                    <span class="notification-time">{{ item.time }}</span>
+                  </button>
+                </div>
+              </div>
+            </el-popover>
             <el-dropdown @command="handleCommand">
               <span class="user-info">
                 <el-avatar :size="36" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
@@ -86,16 +116,17 @@
                 </el-button>
               </div>
               <div class="button-group">
-                <el-button type="success" @click="add" class="action-btn">
+                <el-button v-if="hasPermission('btn:user:add')" type="success" @click="add" class="action-btn">
                   <el-icon><Plus /></el-icon> 新增用户
                 </el-button>
-                <el-button type="warning" @click="exportData" class="action-btn">
+                <el-button v-if="hasPermission('btn:user:export')" type="warning" @click="exportData" class="action-btn">
                   <el-icon><Download /></el-icon> 导出 Excel
                 </el-button>
-                <el-button type="info" @click="importDialogVisible = true" class="action-btn">
+                <el-button v-if="hasPermission('btn:user:import')" type="info" @click="importDialogVisible = true" class="action-btn">
                   <el-icon><Upload /></el-icon> 导入 Excel
                 </el-button>
                 <el-button
+                  v-if="hasPermission('btn:user:delete')"
                   type="danger"
                   @click="batchDelete"
                   :disabled="selectedIds.length === 0"
@@ -109,7 +140,7 @@
             <el-table
               :data="tableData"
               border
-              stripe
+              :stripe="appSettings.tableStripe"
               style="width: 100%"
               @selection-change="handleSelectionChange"
               class="modern-table"
@@ -136,10 +167,12 @@
                     size="small"
                     @click="handleEdit(scope.row)"
                     class="table-btn"
+                    v-if="hasPermission('btn:user:edit')"
                   >
                     <el-icon><Edit /></el-icon> 编辑
                   </el-button>
                   <el-button
+                    v-if="hasPermission('btn:user:delete')"
                     type="danger"
                     size="small"
                     @click="handleDelete(scope.row.id)"
@@ -259,6 +292,84 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+        v-model="profileDialogVisible"
+        title="个人中心"
+        width="620px"
+        class="modern-dialog"
+    >
+      <div class="profile-layout">
+        <div class="profile-card">
+          <el-avatar :size="72" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+          <div class="profile-name">{{ profileForm.nickname || profileForm.username || '管理员' }}</div>
+          <div class="profile-role">系统管理员</div>
+          <div class="profile-meta">
+            <span>ID {{ profileForm.id || '-' }}</span>
+            <span>{{ profileForm.sex || '未设置' }}</span>
+          </div>
+        </div>
+        <el-form :model="profileForm" label-width="86px" class="profile-form">
+          <el-form-item label="用户名">
+            <el-input v-model="profileForm.username" disabled />
+          </el-form-item>
+          <el-form-item label="昵称">
+            <el-input v-model="profileForm.nickname" placeholder="请输入昵称" />
+          </el-form-item>
+          <el-form-item label="年龄">
+            <el-input-number v-model="profileForm.age" :min="1" :max="150" style="width: 100%" />
+          </el-form-item>
+          <el-form-item label="性别">
+            <el-radio-group v-model="profileForm.sex">
+              <el-radio label="男">男</el-radio>
+              <el-radio label="女">女</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="地址">
+            <el-input v-model="profileForm.address" type="textarea" :rows="3" placeholder="请输入地址" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="profileDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveProfile">保存资料</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+        v-model="settingsDialogVisible"
+        title="系统设置"
+        width="620px"
+        class="modern-dialog"
+    >
+      <div class="settings-list">
+        <div class="setting-row">
+          <div>
+            <div class="setting-title">紧凑模式</div>
+            <div class="setting-desc">减小工具栏、表格和页脚间距，适合高频录入。</div>
+          </div>
+          <el-switch v-model="appSettings.compactMode" @change="saveSettings" />
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-title">表格斑马纹</div>
+            <div class="setting-desc">在数据较多时增强横向阅读定位。</div>
+          </div>
+          <el-switch v-model="appSettings.tableStripe" @change="saveSettings" />
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-title">消息提醒</div>
+            <div class="setting-desc">关闭后隐藏顶部消息红点，但保留消息中心内容。</div>
+          </div>
+          <el-switch v-model="appSettings.notifications" @change="saveSettings" />
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="resetSettings">恢复默认</el-button>
+        <el-button type="primary" @click="settingsDialogVisible = false">完成</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -274,6 +385,18 @@ import {
 import request from '@/utils/request'
 
 const route = useRoute()
+const defaultMenus = [
+  { name: '用户管理', code: 'menu:user', path: '/', icon: 'User', sort: 10 },
+  { name: '仪表盘', code: 'menu:dashboard', path: '/dashboard', icon: 'DataAnalysis', sort: 20 },
+  { name: '角色管理', code: 'menu:role', path: '/roles', icon: 'UserFilled', sort: 30 },
+  { name: '操作日志', code: 'menu:log', path: '/logs', icon: 'Document', sort: 40 }
+]
+const menuIconMap = {
+  User,
+  DataAnalysis,
+  UserFilled,
+  Document
+}
 const tableData = ref([])
 const search = ref('')
 const currentPage = ref(1)
@@ -282,12 +405,28 @@ const total = ref(0)
 const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
 const importDialogVisible = ref(false)
+const profileDialogVisible = ref(false)
+const settingsDialogVisible = ref(false)
 const formRef = ref(null)
 const uploadRef = ref(null)
 const currentUser = ref(null)
 const importing = ref(false)
 const selectedFile = ref(null)
 const viewUser = ref({})
+const profileForm = ref({})
+const defaultSettings = {
+  compactMode: false,
+  tableStripe: true,
+  notifications: true
+}
+const appSettings = ref({ ...defaultSettings })
+const notifications = ref([
+  { id: 1, title: '用户资料已更新', desc: 'admin 的基础资料刚刚完成同步', time: '刚刚', read: false },
+  { id: 2, title: 'Excel 导入可用', desc: '当前支持 xlsx/xls 用户批量导入', time: '今天', read: false },
+  { id: 3, title: '数据库已连接', desc: 'user_management 数据库连接正常', time: '今天', read: false },
+  { id: 4, title: '操作日志记录中', desc: '带 @Log 的接口会自动写入日志', time: '今天', read: false },
+  { id: 5, title: 'Redis 未启动时已降级', desc: '登录限流不会阻断本地开发检查', time: '今天', read: false }
+])
 
 const currentRouteName = computed(() => {
   const routeMap = {
@@ -298,6 +437,17 @@ const currentRouteName = computed(() => {
   }
   return routeMap[route.path] || '用户管理'
 })
+
+const unreadCount = computed(() => notifications.value.filter(item => !item.read).length)
+const visibleMenus = computed(() => {
+  const menus = currentUser.value?.menus
+  return Array.isArray(menus) && menus.length > 0 ? menus : defaultMenus
+})
+
+const hasPermission = (code) => {
+  const permissions = currentUser.value?.permissions
+  return !Array.isArray(permissions) || permissions.length === 0 || permissions.includes(code)
+}
 
 const form = ref({
   username: '',
@@ -418,10 +568,74 @@ const handleCommand = (command) => {
       })
     })
   } else if (command === 'profile') {
-    ElMessage.info('个人中心功能开发中...')
+    openProfile()
   } else if (command === 'settings') {
-    ElMessage.info('系统设置功能开发中...')
+    settingsDialogVisible.value = true
   }
+}
+
+const openProfile = () => {
+  profileForm.value = {
+    id: currentUser.value?.id,
+    username: currentUser.value?.username || '',
+    nickname: currentUser.value?.nickname || '',
+    age: currentUser.value?.age || null,
+    sex: currentUser.value?.sex || '',
+    address: currentUser.value?.address || ''
+  }
+  profileDialogVisible.value = true
+}
+
+const saveProfile = () => {
+  const updatedUser = {
+    ...(currentUser.value || {}),
+    ...profileForm.value
+  }
+  delete updatedUser.password
+  request.put('/api/user', updatedUser).then(res => {
+    if (res.code === '0') {
+      currentUser.value = updatedUser
+      localStorage.setItem('userInfo', JSON.stringify(updatedUser))
+      profileDialogVisible.value = false
+      ElMessage.success('个人资料已保存')
+      load()
+    } else {
+      ElMessage.error(res.msg || '保存失败')
+    }
+  })
+}
+
+const loadSettings = () => {
+  const saved = localStorage.getItem('appSettings')
+  if (!saved) return
+  try {
+    appSettings.value = {
+      ...defaultSettings,
+      ...JSON.parse(saved)
+    }
+  } catch (e) {
+    appSettings.value = { ...defaultSettings }
+  }
+}
+
+const saveSettings = () => {
+  localStorage.setItem('appSettings', JSON.stringify(appSettings.value))
+}
+
+const resetSettings = () => {
+  appSettings.value = { ...defaultSettings }
+  saveSettings()
+  ElMessage.success('系统设置已恢复默认')
+}
+
+const markNotificationRead = (item) => {
+  item.read = true
+}
+
+const markAllRead = () => {
+  notifications.value.forEach(item => {
+    item.read = true
+  })
 }
 
 const selectedIds = ref([])
@@ -450,7 +664,16 @@ const batchDelete = () => {
 }
 
 const exportData = () => {
-  window.open('http://localhost:9090/api/user/export')
+  request.get('/api/user/export', {
+    responseType: 'blob'
+  }).then(blob => {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '用户列表.xlsx'
+    link.click()
+    window.URL.revokeObjectURL(url)
+  })
 }
 
 const handleFileChange = (file) => {
@@ -489,6 +712,7 @@ const handleImport = () => {
 }
 
 onMounted(() => {
+  loadSettings()
   const userInfo = localStorage.getItem('userInfo')
   if (userInfo) {
     currentUser.value = JSON.parse(userInfo)
@@ -499,91 +723,204 @@ onMounted(() => {
 
 <style scoped>
 .modern-aside {
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
+  background: #18372b;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 8px 0 26px rgba(24, 55, 43, 0.16);
 }
 
 .logo-section {
   height: 70px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0 22px;
+  background: #153126;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .logo-text {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
-  color: #fff;
-  letter-spacing: 1px;
+  color: #fbf6ea;
+  letter-spacing: 0;
 }
 
 .modern-menu .el-menu-item {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 15px;
-  border-radius: 10px !important;
-  margin: 6px 16px !important;
-  width: calc(100% - 32px) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: rgba(251, 246, 234, 0.78);
+  font-size: 14px;
+  border-radius: 6px !important;
+  margin: 5px 14px !important;
+  width: calc(100% - 28px) !important;
+  transition: background-color 0.16s ease, color 0.16s ease;
 }
 
 .modern-menu .el-menu-item:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-  transform: translateX(8px);
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff7e8 !important;
 }
 
 .modern-menu .el-menu-item.is-active {
-  background: rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #f2dfc6 !important;
+  color: #18372b !important;
+  box-shadow: none;
+  font-weight: 700;
 }
 
 .modern-header {
-  background: #fff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 253, 247, 0.94);
+  border-bottom: 1px solid #ded6c8;
+  box-shadow: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 70px;
   padding: 0 24px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .breadcrumb-icon {
-  color: #667eea;
+  color: #1f4d3a;
 }
 
 .breadcrumb-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  color: #252923;
+}
+
+.breadcrumb-subtitle {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #777267;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
+}
+
+.notification-button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ded6c8;
+  border-radius: 8px;
+  background: #fffaf0;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.notification-button:hover {
+  border-color: #b66a2c;
+  background: #f8efe3;
 }
 
 .notification-badge {
-  cursor: pointer;
-  margin-right: 10px;
+  line-height: 1;
 }
 
 .notification-icon {
-  color: #666;
-  transition: all 0.3s ease;
+  color: #3d433a;
 }
 
-.notification-icon:hover {
-  color: #667eea;
-  transform: scale(1.1);
+.notification-panel {
+  background: #fffdf7;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.notification-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #e6ded0;
+}
+
+.notification-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #252923;
+}
+
+.notification-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #777267;
+}
+
+.notification-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  gap: 10px;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 1px solid #f0e8dc;
+  background: #fffdf7;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-item:hover {
+  background: #f8f2e8;
+}
+
+.notification-item.unread {
+  background: #f6efe0;
+}
+
+.notification-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.notification-item.unread .notification-dot {
+  background: #b66a2c;
+}
+
+.notification-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.notification-item-title {
+  color: #252923;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notification-item-desc {
+  color: #6f756d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.notification-time {
+  color: #9a9387;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .user-info {
@@ -591,68 +928,66 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 24px;
-  transition: all 0.3s ease;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  padding: 6px 10px 6px 6px;
+  border: 1px solid #ded6c8;
+  border-radius: 8px;
+  background: #fffaf0;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
 }
 
 .user-info:hover {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-color: #b66a2c;
+  background: #f8efe3;
 }
 
 .username {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #252923;
 }
 
 .arrow-icon {
-  color: #999;
+  color: #777267;
 }
 
 .main-card {
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(41, 35, 24, 0.08);
 }
 
 .toolbar-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
-  border-radius: 12px;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 16px;
+  background: #f6efe4;
+  border: 1px solid #e3dacb;
+  border-radius: 8px;
 }
 
 .search-box {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
 }
 
 .search-input :deep(.el-input__wrapper) {
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
 }
 
 .button-group {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .action-btn {
-  border-radius: 8px;
-  font-weight: 500;
-  padding: 10px 20px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 9px 14px;
 }
 
 .batch-btn:disabled {
@@ -661,7 +996,7 @@ onMounted(() => {
 }
 
 .modern-table {
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -669,16 +1004,11 @@ onMounted(() => {
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 13px;
-  margin: 0 2px;
-  transition: all 0.3s ease;
-}
-
-.table-btn:hover {
-  transform: scale(1.05);
+  margin: 0 2px 0 0;
 }
 
 .pagination-section {
-  margin-top: 24px;
+  margin-top: 18px;
   display: flex;
   justify-content: flex-end;
 }
@@ -688,7 +1018,7 @@ onMounted(() => {
 }
 
 .modern-dialog :deep(.el-dialog) {
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -699,34 +1029,148 @@ onMounted(() => {
 
 .modern-upload :deep(.el-upload-dragger) {
   padding: 40px 20px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-radius: 8px;
+  background: #fbf8f1;
 }
 
 .upload-icon {
   font-size: 60px;
-  color: #667eea;
+  color: #1f4d3a;
   margin-bottom: 16px;
 }
 
 .upload-text {
-  color: #666;
+  color: #6f756d;
   font-size: 15px;
 }
 
 .upload-text em {
-  color: #667eea;
+  color: #1f4d3a;
   font-style: normal;
   font-weight: 600;
 }
 
 .upload-tip {
-  color: #999;
+  color: #777267;
   font-size: 13px;
   display: flex;
   align-items: center;
   gap: 6px;
   justify-content: center;
   margin-top: 12px;
+}
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 22px;
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 22px 16px;
+  border: 1px solid #e3dacb;
+  border-radius: 8px;
+  background: #f8f2e8;
+}
+
+.profile-name {
+  margin-top: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #252923;
+}
+
+.profile-role {
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e4eee7;
+  color: #1f4d3a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+  color: #777267;
+  font-size: 12px;
+}
+
+.profile-form {
+  min-width: 0;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #e3dacb;
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.setting-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #252923;
+}
+
+.setting-desc {
+  margin-top: 5px;
+  color: #6f756d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.compact-mode :deep(.el-main) {
+  padding: 14px;
+}
+
+.compact-mode .toolbar-section {
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.compact-mode .action-btn {
+  padding: 7px 12px;
+}
+
+.compact-mode .pagination-section {
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .toolbar-section {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-box,
+  .button-group {
+    width: 100%;
+  }
+
+  .search-input {
+    flex: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

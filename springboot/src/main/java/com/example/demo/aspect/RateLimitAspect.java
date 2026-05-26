@@ -4,6 +4,7 @@ import com.example.demo.annotation.RateLimit;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -31,17 +32,21 @@ public class RateLimitAspect {
         // 构建 Redis key
         String key = "rate_limit:" + ip + ":" + method;
 
-        // 使用 Redis INCR 实现计数
-        Long count = redisTemplate.opsForValue().increment(key);
+        try {
+            // 使用 Redis INCR 实现计数
+            Long count = redisTemplate.opsForValue().increment(key);
 
-        if (count == 1) {
-            // 第一次请求，设置过期时间
-            redisTemplate.expire(key, rateLimit.timeWindow(), TimeUnit.SECONDS);
-        }
+            if (count == 1) {
+                // 第一次请求，设置过期时间
+                redisTemplate.expire(key, rateLimit.timeWindow(), TimeUnit.SECONDS);
+            }
 
-        // 检查是否超过限制
-        if (count > rateLimit.maxRequests()) {
-            throw new RuntimeException("请求过于频繁，请稍后再试");
+            // 检查是否超过限制
+            if (count > rateLimit.maxRequests()) {
+                throw new RuntimeException("请求过于频繁，请稍后再试");
+            }
+        } catch (RedisConnectionFailureException e) {
+            // 开发环境 Redis 未启动时不阻断核心功能。
         }
 
         return pjp.proceed();
