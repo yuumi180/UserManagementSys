@@ -587,16 +587,16 @@ onMounted(() => {
   // 窗口大小改变时重新渲染图表
   window.addEventListener('resize', () => {
     if (pieChart.value) {
-      echarts.getInstanceByDom(pieChart.value).resize()
+      echarts.getInstanceByDom(pieChart.value)?.resize()
     }
     if (barChart.value) {
-      echarts.getInstanceByDom(barChart.value).resize()
+      echarts.getInstanceByDom(barChart.value)?.resize()
     }
     if (mapChart.value) {
-      echarts.getInstanceByDom(mapChart.value).resize()
+      echarts.getInstanceByDom(mapChart.value)?.resize()
     }
     if (cityBarChart.value) {
-      echarts.getInstanceByDom(cityBarChart.value).resize()
+      echarts.getInstanceByDom(cityBarChart.value)?.resize()
     }
   })
 })

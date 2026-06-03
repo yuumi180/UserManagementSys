@@ -343,6 +343,32 @@
         class="modern-dialog"
     >
       <div class="settings-list">
+        <div class="ai-config-panel">
+          <div class="setting-title">大模型 API 配置</div>
+          <div class="setting-desc">用于 AI 数据问答，配置保存在当前浏览器本地，不会写入数据库。</div>
+          <el-form label-width="92px" class="ai-config-form">
+            <el-form-item label="接口类型">
+              <el-select v-model="appSettings.aiProvider" style="width: 100%">
+                <el-option label="OpenAI 兼容" value="openai-compatible" />
+                <el-option label="Ollama 本地" value="ollama" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="接口地址">
+              <el-input v-model="appSettings.aiBaseUrl" placeholder="例如：https://api.openai.com/v1" />
+            </el-form-item>
+            <el-form-item label="API Key" v-if="appSettings.aiProvider !== 'ollama'">
+              <el-input
+                v-model="appSettings.aiApiKey"
+                type="password"
+                show-password
+                placeholder="请输入大模型 API Key"
+              />
+            </el-form-item>
+            <el-form-item label="模型名称">
+              <el-input v-model="appSettings.aiModel" placeholder="例如：gpt-4o-mini" />
+            </el-form-item>
+          </el-form>
+        </div>
         <div class="setting-row">
           <div>
             <div class="setting-title">紧凑模式</div>
@@ -374,7 +400,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -417,9 +443,16 @@ const profileForm = ref({})
 const defaultSettings = {
   compactMode: false,
   tableStripe: true,
-  notifications: true
+  notifications: true,
+  aiProvider: 'openai-compatible',
+  aiBaseUrl: 'https://api.openai.com/v1',
+  aiApiKey: '',
+  aiModel: 'gpt-4o-mini'
 }
 const appSettings = ref({ ...defaultSettings })
+watch(appSettings, () => {
+  saveSettings()
+}, { deep: true })
 const notifications = ref([
   { id: 1, title: '用户资料已更新', desc: 'admin 的基础资料刚刚完成同步', time: '刚刚', read: false },
   { id: 2, title: 'Excel 导入可用', desc: '当前支持 xlsx/xls 用户批量导入', time: '今天', read: false },
@@ -441,7 +474,14 @@ const currentRouteName = computed(() => {
 const unreadCount = computed(() => notifications.value.filter(item => !item.read).length)
 const visibleMenus = computed(() => {
   const menus = currentUser.value?.menus
-  return Array.isArray(menus) && menus.length > 0 ? menus : defaultMenus
+  const baseMenus = Array.isArray(menus) && menus.length > 0 ? menus : defaultMenus
+  if (baseMenus.some(menu => menu.path === '/ai-chat')) {
+    return baseMenus
+  }
+  return [
+    ...baseMenus,
+    { name: 'AI 数据问答', code: 'menu:ai-chat', path: '/ai-chat', icon: 'User', sort: 50 }
+  ]
 })
 
 const hasPermission = (code) => {

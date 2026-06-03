@@ -38,6 +38,15 @@ request.interceptors.response.use(response => {
     
     return res;
 }, error => {
+    if (error.response && error.response.status === 401) {
+        ElMessage.error('登录已过期，请重新登录');
+        localStorage.removeItem('token');
+        localStorage.removeItem('userInfo');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 1000);
+        return Promise.reject(error);
+    }
     console.log('err' + error);
     ElMessage.error(error.message || '请求失败');
     return Promise.reject(error);

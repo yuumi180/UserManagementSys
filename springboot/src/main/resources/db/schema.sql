@@ -109,6 +109,10 @@ SELECT '操作日志', 'menu:log', 'MENU', '/logs', 'Document', 40, 0
 WHERE NOT EXISTS (SELECT 1 FROM permission WHERE code = 'menu:log');
 
 INSERT INTO permission (name, code, type, path, icon, sort, parent_id)
+SELECT 'AI 数据问答', 'menu:ai-chat', 'MENU', '/ai-chat', 'ChatDotRound', 50, 0
+WHERE NOT EXISTS (SELECT 1 FROM permission WHERE code = 'menu:ai-chat');
+
+INSERT INTO permission (name, code, type, path, icon, sort, parent_id)
 SELECT '新增用户', 'btn:user:add', 'BUTTON', NULL, NULL, 101, 0
 WHERE NOT EXISTS (SELECT 1 FROM permission WHERE code = 'btn:user:add');
 
@@ -137,6 +141,10 @@ SELECT 'AI 日志分析', 'btn:ai:log', 'BUTTON', NULL, NULL, 202, 0
 WHERE NOT EXISTS (SELECT 1 FROM permission WHERE code = 'btn:ai:log');
 
 INSERT INTO permission (name, code, type, path, icon, sort, parent_id)
+SELECT 'AI 数据问答', 'btn:ai:chat', 'BUTTON', NULL, NULL, 203, 0
+WHERE NOT EXISTS (SELECT 1 FROM permission WHERE code = 'btn:ai:chat');
+
+INSERT INTO permission (name, code, type, path, icon, sort, parent_id)
 SELECT '维护角色', 'btn:role:manage', 'BUTTON', NULL, NULL, 301, 0
 WHERE NOT EXISTS (SELECT 1 FROM permission WHERE code = 'btn:role:manage');
 
@@ -150,7 +158,7 @@ WHERE r.code = 'ADMIN'
 INSERT INTO role_permission (role_id, permission_id)
 SELECT r.id, p.id FROM role r, permission p
 WHERE r.code = 'OPERATOR'
-  AND p.code IN ('menu:user', 'menu:dashboard', 'btn:user:add', 'btn:user:edit', 'btn:user:import', 'btn:user:export', 'btn:ai:dashboard')
+  AND p.code IN ('menu:user', 'menu:dashboard', 'menu:ai-chat', 'btn:user:add', 'btn:user:edit', 'btn:user:import', 'btn:user:export', 'btn:ai:dashboard', 'btn:ai:chat')
   AND NOT EXISTS (
       SELECT 1 FROM role_permission rp WHERE rp.role_id = r.id AND rp.permission_id = p.id
   );
@@ -158,7 +166,7 @@ WHERE r.code = 'OPERATOR'
 INSERT INTO role_permission (role_id, permission_id)
 SELECT r.id, p.id FROM role r, permission p
 WHERE r.code = 'AUDITOR'
-  AND p.code IN ('menu:dashboard', 'menu:log', 'btn:ai:dashboard', 'btn:ai:log')
+  AND p.code IN ('menu:dashboard', 'menu:log', 'menu:ai-chat', 'btn:ai:dashboard', 'btn:ai:log', 'btn:ai:chat')
   AND NOT EXISTS (
       SELECT 1 FROM role_permission rp WHERE rp.role_id = r.id AND rp.permission_id = p.id
   );

@@ -27,6 +27,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/ai-chat',
+    name: 'ai-chat',
+    component: () => import('../views/AiChatView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/LoginView.vue')
@@ -48,7 +54,7 @@ router.beforeEach((to, from, next) => {
   } else if (to.meta.requiresAuth) {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
     const menus = Array.isArray(userInfo.menus) ? userInfo.menus : []
-    const allowedPaths = menus.map(menu => menu.path)
+    const allowedPaths = [...menus.map(menu => menu.path), '/ai-chat']
     if (allowedPaths.length > 0 && !allowedPaths.includes(to.path)) {
       next(allowedPaths[0] || '/')
     } else {
